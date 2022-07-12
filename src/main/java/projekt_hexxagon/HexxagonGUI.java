@@ -14,135 +14,197 @@ public class HexxagonGUI extends PApplet {
     }
     //variables
     HexxagonGame game;
-    boolean ingame = true;
+    boolean ingame = false;
     boolean isPlayerTurn = true;
     int renderLoopCounter = 8;
-    Hexxagon.fieldType playerColor;
+    Hexxagon.fieldType playerColor = Hexxagon.fieldType.RED;
+    difficultySettings chosenDiff = difficultySettings.EASY;
     Map<int[], int[]> hexCoordinates;
     List<Move> currentMoves;
+    enum difficultySettings {
+        EASY,
+        NORMAL,
+        HARD,
+        VERY_HARD,
+        UNBEATABLE
+    }
+    difficultySettings[] diffValues = difficultySettings.values();
+
 
     public void settings() {
         size(800, 800);
     }
 
-
     public void setup() {
-        setGame(4);
         frameRate(60);
         background(100);
         textSize(32);
         noStroke();
+        textAlign(CENTER);
         draw();
     }
     public void draw(){
-        //renderTileCount();
-        if (renderLoopCounter != 0) renderLoopCounter--;
-        List<Tile[]> cols = this.game.getBoard();
-        for (int i = 0; i < cols.size(); i++){
-            for (int j = 0; j < cols.get(i).length; j++){
-                Tile t = cols.get(i)[j];
-                pushMatrix();
-                switch (cols.get(i)[j].type){
-                    case EMPTY -> fill(255);
-                    case RED -> fill(255, 0, 0);
-                    case BLUE -> fill(0, 0, 255);
-                    case GONE -> fill(0);
-                }
-                int offsetX = (i * 70) + 100;
-                int offsetY = (j * 80) - cols.get(i).length * 40 + 400;
-                for (Move m: currentMoves){
-                    if (Arrays.equals(t.position, m.to) && t.type == Hexxagon.fieldType.EMPTY) {
-                        if (m.isCopy) fill(0,255,0); else fill(255,255,0);
+        if (ingame){
+            background(87,8,97);
+            if (renderLoopCounter != 0) renderLoopCounter--;
+            List<Tile[]> cols = this.game.getBoard();
+            for (int i = 0; i < cols.size(); i++){
+                for (int j = 0; j < cols.get(i).length; j++){
+                    Tile t = cols.get(i)[j];
+                    pushMatrix();
+                    switch (cols.get(i)[j].type){
+                        case EMPTY -> fill(255);
+                        case RED -> fill(255, 0, 0);
+                        case BLUE -> fill(0, 0, 255);
+                        case GONE -> fill(0);
                     }
+                    int offsetX = (i * 70) + 100;
+                    int offsetY = (j * 80) - cols.get(i).length * 40 + 400;
+                    for (Move m: currentMoves){
+                        if (Arrays.equals(t.position, m.to) && t.type == Hexxagon.fieldType.EMPTY) {
+                            if (m.isCopy) fill(0,255,0); else fill(255,255,0);
+                        }
+                    }
+                    hexTile(offsetX, offsetY, 40);
+                    noFill();
+                    popMatrix();
                 }
-                hexTile(offsetX, offsetY, 40);
-                noFill();
-                popMatrix();
             }
-        }
-        if(!isPlayerTurn && renderLoopCounter == 0){    //TODO nebenläufigkeit dies das
-            assert currentMoves.isEmpty(): "hm";
-            try {
-                this.game = this.game.makeMove(this.game.aiMove());
-                this.isPlayerTurn = true;
-                renderLoopCounter = 8;
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+            if(!isPlayerTurn && renderLoopCounter == 0){    //TODO nebenläufigkeit dies das
+                assert currentMoves.isEmpty(): "hm";
+                try {
+                    this.game = this.game.makeMove(this.game.aiMove());
+                    this.isPlayerTurn = true;
+                    renderLoopCounter = 8;
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
             }
+            //renderMainMenu();
+            renderTileCount();
+        } else {
+            background(100);
+            renderMainMenu();
         }
-        renderMainMenu();
     }
 
     void renderTileCount(){
-        if (ingame){
-            int r = game.getBoard().stream()
-                    .mapToInt(tArr -> (int) Arrays.stream(tArr)
-                            .filter(t -> t.getType() == Hexxagon.fieldType.RED)
-                            .count())
-                    .sum();
-            int b = game.getBoard().stream()
-                    .mapToInt(tArr -> (int) Arrays.stream(tArr)
-                            .filter(t -> t.getType() == Hexxagon.fieldType.BLUE)
-                            .count())
-                    .sum();
-
-        }
-    }
+        int r = game.getBoard().stream()
+                .mapToInt(tArr -> (int) Arrays.stream(tArr)
+                        .filter(t -> t.getType() == Hexxagon.fieldType.RED)
+                        .count())
+                .sum();
+        int b = game.getBoard().stream()
+                .mapToInt(tArr -> (int) Arrays.stream(tArr)
+                        .filter(t -> t.getType() == Hexxagon.fieldType.BLUE)
+                        .count())
+                .sum();
+        fill(0);
+        text("RED: " + r, 650, 700);
+        text("BLUE: " + b, 650, 750);
+}
 
     void renderMainMenu(){
         ///option for difficulty
         //choose color ? maybe?
         //play button
-//        if (!inGame){
-//            fill(0,255,0);
-//            rect(350, 700, 300, 70);  //rect(btn.px, btn.py, btn.w, btn.h);
-//            fill(0);
-//            text("PLAY", 770, 720);                                 //text(btn.action, btn.px+20, btn.py+20);
-//            noFill();
-//        }
-    }
-
-    private class mainMenu{
-        int[] playBtn = new int[]{350, 700, 300, 70};
+        fill(0);
+        text("CHOOSE YOUR DIFFICULTY!", width/2, height - 700);
+        fill(87,8,97);
+        rect(width-550, height - 650, 300, 70);
+        fill(0);
+        text(chosenDiff.toString(), width/2, height - 605);
 
 
+        switch (playerColor){
+            case RED -> {
+                fill(200, 0,0);
+                hexTile(width - 600, height -350, 80);
+            }
+            case BLUE -> {
+                fill(0, 0,200);
+                hexTile(width - 200, height -350, 80);
+            }
+        }
+
+        fill(0);
+        text("CHOOSE YOUR COLOR!", width/2, height - 500);
+        fill(255, 0,0);
+        hexTile(width - 600, height -350, 60);
+
+        fill(0, 0,255);
+        hexTile(width - 200, height -350, 60);
+
+        fill(87,8,97);
+        rect(width-550, height - 200, 300, 70);  //rect(btn.px, btn.py, btn.w, btn.h);
+        fill(0);
+        text("PLAY", width/2, height - 155);
+        noFill();
     }
 
     public void mouseClicked(){
-        if (currentMoves.isEmpty()){
-            hexCoordinates.forEach((key, value) -> {
-                if (mouseOver(value)){
-                    Tile t = this.game.getBoard().get(key[0])[key[1]];
-                    if (t.type == playerColor){
-                        currentMoves = this.game.getPossibleMoves(t);
-                    } else {
-                        currentMoves.clear();
+        if (ingame){
+            if (currentMoves.isEmpty()){
+                hexCoordinates.forEach((key, value) -> {
+                    if (mouseOver(value, 40)){
+                        Tile t = this.game.getBoard().get(key[0])[key[1]];
+                        if (t.type == playerColor){
+                            currentMoves = this.game.getPossibleMoves(t);
+                        } else {
+                            currentMoves.clear();
+                        }
+                    }
+                });
+            } else {
+                for (Move currentMove : currentMoves) {
+                    int[] yolo = hexCoordinates.keySet().stream()
+                            .filter(key -> Arrays.equals(key, currentMove.to))
+                            .findFirst().get();
+                    if (hexCoordinates.containsKey(yolo)){
+                        if (mouseOver(hexCoordinates.get(yolo), 40)){
+                            this.game = this.game.makeMove(currentMove);
+                            this.isPlayerTurn = false;
+                            renderLoopCounter = 8;
+                            break;
+                        }
                     }
                 }
-            });
-        } else {
-            for (Move currentMove : currentMoves) {
-                int[] yolo = hexCoordinates.keySet().stream()
-                        .filter(key -> Arrays.equals(key, currentMove.to))
-                        .findFirst().get();
-                if (hexCoordinates.containsKey(yolo)){
-                    if (mouseOver(hexCoordinates.get(yolo))){
-                        this.game = this.game.makeMove(currentMove);
-                        this.isPlayerTurn = false;
-                        renderLoopCounter = 8;
-                        break;
-                    }
-                }
+                currentMoves.clear();
             }
-            currentMoves.clear();
+        } else {
+            if (mouseOverRect(width-550, height - 650, 300, 70)) {  //difficulty
+                int next;
+                if (chosenDiff == difficultySettings.UNBEATABLE) next = 0; else next = chosenDiff.ordinal()+1;
+                chosenDiff = diffValues[next];
+                System.out.println(chosenDiff);
+            }
+            if (mouseOver(new int[]{width - 600, height -350}, 60)){
+                playerColor = Hexxagon.fieldType.RED;
+            }
+            if (mouseOver(new int[]{width - 200, height -350}, 60)){
+                playerColor = Hexxagon.fieldType.BLUE;
+            }
+
+            if (mouseOverRect(width-550, height - 200, 300, 70)){   //start playing
+                setGame(chosenDiff.ordinal() + 1);
+                ingame = true;
+            }
         }
     }
 
-    boolean mouseOver(int[] xy){
+    boolean mouseOver(int[] xy, int radius){
+        int rad = radius - 4;
         float mx = mouseX;
         float my = mouseY;
-        return mx > xy[0] - 30 && mx < xy[0] + 30
-                && my > xy[1] - 30 && my < xy[1] + 30;
+        return mx > xy[0] - rad && mx < xy[0] + rad
+                && my > xy[1] - rad && my < xy[1] + rad;
+    }
+
+    boolean mouseOverRect(int x, int y, int w, int h){
+        float mx = mouseX;
+        float my = mouseY;
+        return mx >= x && mx <= x + w &&
+                my >= y && my <= y + h;
     }
 
     void hexTile(float x, float y, float radius) {
@@ -245,35 +307,28 @@ public class HexxagonGUI extends PApplet {
                         t.getNeighbors().add(new int[]{x,y});
                     }
                 }
-                assert t.getNeighbors().size() > 2 && t.getNeighbors().size() <= 6: "too many neighbors or none at all";
+                assert t.getNeighbors().size()
+                        > 2 && t.getNeighbors().size() <= 6: "too many neighbors or none at all";
             }
         }
 
         columns.get(0)[0].setType(Hexxagon.fieldType.RED);
-        boardTiles.get(Hexxagon.fieldType.RED).add(columns.get(0)[0]);
-
         columns.get(0)[4].setType(Hexxagon.fieldType.BLUE);
-        boardTiles.get(Hexxagon.fieldType.BLUE).add(columns.get(0)[4]);
-
         columns.get(4)[8].setType(Hexxagon.fieldType.RED);
-        boardTiles.get(Hexxagon.fieldType.RED).add(columns.get(4)[8]);
-
         columns.get(4)[0].setType(Hexxagon.fieldType.BLUE);
-        boardTiles.get(Hexxagon.fieldType.BLUE).add(columns.get(4)[0]);
-
         columns.get(8)[0].setType(Hexxagon.fieldType.RED);
-        boardTiles.get(Hexxagon.fieldType.RED).add(columns.get(8)[0]);
-
         columns.get(8)[4].setType(Hexxagon.fieldType.BLUE);
-        boardTiles.get(Hexxagon.fieldType.BLUE).add(columns.get(8)[4]);
-
         columns.get(4)[3].setType(Hexxagon.fieldType.GONE);
         columns.get(3)[4].setType(Hexxagon.fieldType.GONE);
         columns.get(5)[4].setType(Hexxagon.fieldType.GONE);
 
-        this.playerColor = Hexxagon.fieldType.RED;
+        columns.forEach(tArray -> Arrays.stream(tArray)
+                .filter(t -> t.type != Hexxagon.fieldType.EMPTY
+                        && t.type != Hexxagon.fieldType.GONE)
+                .forEach(t -> boardTiles.get(t.type).add(t)));
+
         this.game = Hexxagon.of(boardTiles, columns,
-                difficulty, Hexxagon.fieldType.RED);
+                difficulty, playerColor);
 
         hexCoordinates = new HashMap<>();
         List<Tile[]> cols = this.game.getBoard();

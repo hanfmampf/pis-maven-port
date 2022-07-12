@@ -23,8 +23,8 @@ public class Tester extends PApplet {
 
     void setPlayers(){
         playField = setGame(1, Hexxagon.fieldType.RED);
-        playerOne = setGame(4, Hexxagon.fieldType.BLUE); //THIS IS RED
-        playerTwo = setGame(4, Hexxagon.fieldType.RED); //THIS IS BLUE
+        playerOne = setGame(1, Hexxagon.fieldType.BLUE); //THIS IS RED
+        playerTwo = setGame(1, Hexxagon.fieldType.RED); //THIS IS BLUE
     }
     //difficulty settings =>
     //1 -> monte carlo x 50
