@@ -1,6 +1,5 @@
 .out
 .out.*
-.idea
 *.log
 programme.out.production.programme
 *.class
