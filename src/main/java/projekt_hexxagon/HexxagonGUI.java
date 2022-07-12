@@ -362,7 +362,7 @@ public class HexxagonGUI extends PApplet {
 
         this.game = Hexxagon.of(boardTiles, columns,
                 difficulty, playerColor);
-
+        isPlayerTurn = true;
         hexCoordinates = new HashMap<>();
         List<Tile[]> cols = this.game.getBoard();
         for (int i = 0; i < cols.size(); i++){
