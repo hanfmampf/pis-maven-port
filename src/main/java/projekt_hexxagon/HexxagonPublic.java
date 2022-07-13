@@ -341,10 +341,10 @@ public class HexxagonPublic implements HexxagonPublicInterface {
             HexxagonPublic newGame = HexxagonPublic.of(game.boardTiles, game.columns
                     , game.difficulty, game.playerColor);
             boolean isAI = false;
-            for (int j = 0; j < 5; j++){
+            for (int j = 0; j < amount/10; j++){
                 if (newGame.isGameOver()) break;
                 MovePublic move;
-                move = newGame.getRandomMove(isAI ? game.aiColor : game.playerColor); //TODO random move????
+                move = newGame.getRandomMove(isAI ? game.aiColor : game.playerColor);
                 newGame = newGame.makeMove(move);
                 isAI = !isAI;
             }

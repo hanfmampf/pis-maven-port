@@ -76,7 +76,7 @@ class HexxagonPublicTest {
         List<MovePublic> allMoves = obvBestMoveGame.getAllPossibleMoves(HexxagonPublic.fieldType2.BLUE);
         List<Callable<Map<MovePublic, Float>>> aiTasks = new ArrayList<>();
         allMoves.forEach(move -> aiTasks.add(new HexxagonPublic.aiTask(obvBestMoveGame, move
-                , difficulty*50, HexxagonPublic.aiMode.MINMAX, difficulty - 1)));
+                , difficulty*50, HexxagonPublic.aiMode.MINMAX, 3)));
         Map<MovePublic, Float> tmp = new HashMap<>();
         aiTasks.forEach(t -> {
             try {
