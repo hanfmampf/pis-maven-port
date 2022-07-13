@@ -57,7 +57,11 @@ class HexxagonPublicTest {
 
     @Test
     void getAllPossibleMoves() {
-
+        //assertequal size
+        List<MovePublic> allMoves = centerGame.getAllPossibleMoves(HexxagonPublic.fieldType2.RED);
+        System.out.println(allMoves.size());
+        assertNotEquals(39, allMoves.size());
+        assertEquals(21, allMoves.size());
     }
 
     @Test
