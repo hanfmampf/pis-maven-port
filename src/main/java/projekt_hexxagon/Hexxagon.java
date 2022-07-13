@@ -250,6 +250,11 @@ public class Hexxagon implements HexxagonGame{
         return newGame;
     }
 
+    private enum aiMode {
+        MINMAX,
+        MCS
+    }
+
     public Move aiMove() throws InterruptedException, ExecutionException {
         // https://stackoverflow.com/questions/9664036/how-to-run-two-methods-simultaneously
         // https://stackoverflow.com/questions/25231149/can-i-use-callable-threads-without-executorservice
@@ -264,32 +269,30 @@ public class Hexxagon implements HexxagonGame{
         ExecutorService executorService = Executors.newFixedThreadPool(8);
         List<Callable<Map<Move, Float>>> aiTasks = new ArrayList<>();
         List<Future<Map<Move, Float>>> results;
-
-        if (this.difficulty > 2){
-            allMoves.forEach(move -> aiTasks.add(new minimaxTask(move
-                    , Hexxagon.of(this.boardTiles, this.columns
-                        , this.difficulty, this.playerColor))));
-        } else {
-            allMoves.forEach(move -> aiTasks.add(new MonteCarloTask(
-                            Hexxagon.of(this.boardTiles, this.columns
-                                    , this.difficulty, this.playerColor)
-                            , move, this.difficulty*100)));
-        }
+        aiMode mode = this.difficulty < 2 ? aiMode.MCS : aiMode.MINMAX;
+        //diff 1 -> 50 mcs
+        //diff 2 -> 100 mcs
+        //diff 3 -> mmx d 2
+        //diff 4 -> mmx d 3
+        //diff 5 -> mmx d 4
+        allMoves.forEach(move -> aiTasks.add(new aiTask(this, move
+                , this.difficulty*50, mode, this.difficulty - 1)));
+        logger.info("aiTasks for every move: MCS amount {}, Mode {}, MMX depth {}"
+                , this.difficulty*50, mode, this.difficulty - 1);
         logger.info("aiMove created the needed tasks for the executor service");
         logger.info("aiMove difficulty setting is currently at {}", this.difficulty);
-        assert !aiTasks.isEmpty(): "aitask empty!";
+        assert !aiTasks.isEmpty(): "aiTasks empty!";
         results = executorService.invokeAll(aiTasks);
         executorService.shutdown();
         assert !results.isEmpty(): "Results are empty!";
-        assert results.stream().allMatch(Future::isDone):
-                "aiMove crashed before finishing. Not all Futures are done";
+        assert results.stream().allMatch(Future::isDone)
+                : "aiMove crashed before finishing. Not all Futures are done";
         logger.info("aiMoves executor service has successfully finished {} tasks"
-                , allMoves.size());
+                , aiTasks.size());
         Map<Move, Float> tmp = new HashMap<>();
         for (Future<Map<Move, Float>> res: results){
             tmp.putAll(res.get());
         }
-        assert !tmp.isEmpty(): "results empty!";
 
         Move bestMove = Collections.max(tmp.entrySet(), Map.Entry.comparingByValue()).getKey();
         logger.info("aiMove has determined: {} as the best move", bestMove);
@@ -297,33 +300,6 @@ public class Hexxagon implements HexxagonGame{
         long duration = endTime - startTime;
         logger.info("aiMove needed {} seconds", (float)duration/1_000_000_000);
         return bestMove;
-    }
-    //logger.debug("");
-    private static class minimaxTask implements Callable<Map<Move, Float>>{
-        Move move;
-        Hexxagon game;
-        int depth;
-        Map<Move, Float> resultMap = new HashMap<>();
-        public minimaxTask(Move move, Hexxagon game) {
-            this.move = move;
-            this.game = game;
-            logger.debug("new miniMax task for move {} has been created", move);
-        }
-        public Map<Move, Float> call(){
-            assert game.difficulty > 2: "Illegal difficulty for Minimax";
-            switch(game.difficulty){
-                case 3 -> depth = 2;
-                case 4 -> depth = 3;
-                case 5 -> depth = 4;
-            }
-
-            float result = game.minimax(game.makeMove(move)
-                    , -999, 999, depth, false);
-            resultMap.put(this.move, result);
-            logger.info("miniMax task {} result: {} -> {}"
-                    , move, result, Thread.currentThread().getId());
-            return resultMap;
-        }
     }
 
     private float minimax(Hexxagon game, float alpha, float beta, int depth, boolean isMax){
@@ -380,24 +356,38 @@ public class Hexxagon implements HexxagonGame{
         return winCounter / (float)amount;
     }
 
-    private static class MonteCarloTask implements Callable<Map<Move, Float>> {
+    private static class aiTask implements Callable<Map<Move, Float>>{
         Hexxagon game;
         Move move;
+        aiMode mode;
         int amount;
+        int depth;
         Map<Move, Float> resultMap = new HashMap<>();
 
-        public MonteCarloTask(Hexxagon game, Move move, int amount) {
+        public aiTask(Hexxagon game, Move move, int amount, aiMode mode, int depth) {
             this.game = game;
             this.move = move;
             this.amount = amount;
-            logger.debug("new monteCarlo task has been created");
+            this.mode = mode;
+            this.depth = depth;
+            logger.debug("new aiTask task has been created");
         }
 
         @Override
         public Map<Move, Float> call() {
-            float result = game.monteCarlo(game.makeMove(move), amount);
+            float result;
+            switch(mode){
+                case MINMAX -> {
+                    result = game.minimax(game.makeMove(move), -999
+                            , 999, depth, false);
+                }
+                case MCS -> {
+                    result = game.monteCarlo(game.makeMove(move), amount);
+                }
+                default -> throw new RuntimeException("AI TASK NEEDS LEGIT MODE");
+            }
             resultMap.put(move, result);
-            logger.info("monteCarlo task result: {} -> {}", move, result);
+            logger.info("aiTask task result: {} -> {}", move, result);
             return resultMap;
         }
     }

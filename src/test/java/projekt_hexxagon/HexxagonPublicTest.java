@@ -2,8 +2,11 @@ package projekt_hexxagon;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,7 +19,8 @@ class HexxagonPublicTest {
         ONEPLAYER,
         FULL,
         AILOST,
-        CENTER
+        CENTER,
+        OBVWIN
     }
     static HexxagonPublic defaultGame;
     static HexxagonPublic fullGame;
@@ -24,6 +28,7 @@ class HexxagonPublicTest {
     static HexxagonPublic emptyGame;
     static HexxagonPublic aiLostGame;
     static HexxagonPublic centerGame;
+    static HexxagonPublic obvBestMoveGame;
 
     @BeforeAll
     static void setup() {
@@ -33,10 +38,7 @@ class HexxagonPublicTest {
         emptyGame = getGameWithSettings(HexxagonPublicTest.settings.EMPTY);
         aiLostGame = getGameWithSettings(HexxagonPublicTest.settings.AILOST);
         centerGame = getGameWithSettings(HexxagonPublicTest.settings.CENTER);
-    }
-
-    @Test
-    void of() {
+        obvBestMoveGame = getGameWithSettings(HexxagonPublicTest.settings.OBVWIN);
     }
 
     @Test
@@ -59,24 +61,52 @@ class HexxagonPublicTest {
     void getAllPossibleMoves() {
         //assertequal size
         List<MovePublic> allMoves = centerGame.getAllPossibleMoves(HexxagonPublic.fieldType2.RED);
-        System.out.println(allMoves.size());
         assertNotEquals(39, allMoves.size());
         assertEquals(21, allMoves.size());
     }
 
     @Test
     void getRandomMove() {
+
     }
 
-    @Test
+    @RepeatedTest(10)
     void minimax() {
-
-        //assert isgameover bei lost games
+        int difficulty = 2;
+        List<MovePublic> allMoves = obvBestMoveGame.getAllPossibleMoves(HexxagonPublic.fieldType2.BLUE);
+        List<Callable<Map<MovePublic, Float>>> aiTasks = new ArrayList<>();
+        allMoves.forEach(move -> aiTasks.add(new HexxagonPublic.aiTask(obvBestMoveGame, move
+                , difficulty*50, HexxagonPublic.aiMode.MINMAX, difficulty - 1)));
+        Map<MovePublic, Float> tmp = new HashMap<>();
+        aiTasks.forEach(t -> {
+            try {
+                tmp.putAll(t.call());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        MovePublic bestMove = Collections.max(tmp.entrySet(), Map.Entry.comparingByValue()).getKey();
+        assertArrayEquals(bestMove.to, new int[]{2, 2});
     }
 
-    @Test
+    @RepeatedTest(10)
     void monteCarlo() {
-        //assert game over bei lost games
+        int difficulty = 2;
+        List<MovePublic> allMoves = obvBestMoveGame.getAllPossibleMoves(HexxagonPublic.fieldType2.BLUE);
+        List<Callable<Map<MovePublic, Float>>> aiTasks = new ArrayList<>();
+        allMoves.forEach(move -> aiTasks.add(new HexxagonPublic.aiTask(obvBestMoveGame, move
+                , difficulty*50, HexxagonPublic.aiMode.MCS, difficulty - 1)));
+        Map<MovePublic, Float> tmp = new HashMap<>();
+        aiTasks.forEach(t -> {
+            try {
+                tmp.putAll(t.call());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        MovePublic bestMove = Collections.max(tmp.entrySet(), Map.Entry.comparingByValue()).getKey();
+
+        assertArrayEquals(bestMove.to, new int[]{2, 2});
     }
 
     static HexxagonPublic getGameWithSettings(HexxagonPublicTest.settings setting) {
@@ -144,7 +174,28 @@ class HexxagonPublicTest {
                 columns.get(3)[4].setType(HexxagonPublic.fieldType2.GONE);
                 columns.get(5)[4].setType(HexxagonPublic.fieldType2.GONE);
             }
+            case OBVWIN -> {
+                columns.get(1)[0].setType(HexxagonPublic.fieldType2.BLUE);
+                columns.get(1)[1].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(1)[2].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(2)[1].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(2)[3].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(3)[2].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(3)[3].setType(HexxagonPublic.fieldType2.RED);
 
+                columns.get(5)[0].setType(HexxagonPublic.fieldType2.BLUE);
+                columns.get(5)[1].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(5)[2].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(6)[0].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(6)[2].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(7)[0].setType(HexxagonPublic.fieldType2.RED);
+
+                columns.get(4)[5].setType(HexxagonPublic.fieldType2.BLUE);
+                columns.get(4)[6].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(3)[7].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(4)[8].setType(HexxagonPublic.fieldType2.RED);
+                columns.get(5)[7].setType(HexxagonPublic.fieldType2.RED);
+            }
             default -> throw
                     new RuntimeException("Unexpected enum value occurred getGameWithSettings");
         }
@@ -156,7 +207,7 @@ class HexxagonPublicTest {
                 .forEach(t -> boardTiles.get(t.type).add(t)));
 
         return HexxagonPublic.of(boardTiles, columns,
-                3, HexxagonPublic.fieldType2.RED);
+                4, HexxagonPublic.fieldType2.RED);
     }
 
     static List<TilePublic[]> setupBoard() {
