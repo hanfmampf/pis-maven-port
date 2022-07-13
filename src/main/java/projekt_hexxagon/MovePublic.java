@@ -3,20 +3,9 @@ package projekt_hexxagon;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class MovePublic {
-    HexxagonPublic.fieldType2 color;
-    boolean isCopy;
-    int[] from;
-    int[] to;
+public record MovePublic(HexxagonPublic.fieldType2 color, boolean isCopy, int[] from, int[] to) {
 
-    private MovePublic(HexxagonPublic.fieldType2 color, boolean isCopy, int[] from, int[] to) {
-        this.color = color;
-        this.isCopy = isCopy;
-        this.from = from;
-        this.to = to;
-    }
-
-    public static MovePublic of(HexxagonPublic.fieldType2 color, boolean isCopy, int[] from, int[] to){
+    public static MovePublic of(HexxagonPublic.fieldType2 color, boolean isCopy, int[] from, int[] to) {
         return new MovePublic(color, isCopy, from, to);
     }
 
@@ -29,6 +18,7 @@ public class MovePublic {
                 && this.to[0] == move.to[0] && this.to[1] == move.to[1]
                 && this.isCopy == move.isCopy && this.color == move.color;
     }
+
     @Override
     public int hashCode() {
         return Objects.hash(this.color, Arrays.hashCode(this.to)

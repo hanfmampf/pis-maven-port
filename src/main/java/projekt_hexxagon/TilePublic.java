@@ -26,15 +26,7 @@ public class TilePublic {
     }
 
     public TilePublic getCopy(){
-        HexxagonPublic.fieldType2 t = null;
-        switch(this.type){
-            case RED -> t = HexxagonPublic.fieldType2.RED;
-            case GONE -> t = HexxagonPublic.fieldType2.GONE;
-            case EMPTY -> t = HexxagonPublic.fieldType2.EMPTY;
-            case BLUE -> t = HexxagonPublic.fieldType2.BLUE;
-        }
-        assert t != null: "Tile Copy error occurred: fieldType t is null";
-        TilePublic x = new TilePublic(t, this.position.clone());
+        TilePublic x = new TilePublic(this.type, this.position.clone());
         this.neighbors.forEach(n -> x.neighbors.add(n.clone()));
         return x;
     }

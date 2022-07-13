@@ -67,6 +67,7 @@ class HexxagonPublicTest {
 
     @Test
     void getRandomMove() {
+        //test if move is valid
 
     }
 
@@ -76,7 +77,7 @@ class HexxagonPublicTest {
         List<MovePublic> allMoves = obvBestMoveGame.getAllPossibleMoves(HexxagonPublic.fieldType2.BLUE);
         List<Callable<Map<MovePublic, Float>>> aiTasks = new ArrayList<>();
         allMoves.forEach(move -> aiTasks.add(new HexxagonPublic.aiTask(obvBestMoveGame, move
-                , difficulty*50, HexxagonPublic.aiMode.MINMAX, difficulty - 1)));
+                , difficulty*50, HexxagonPublic.aiMode.MINMAX, 3)));
         Map<MovePublic, Float> tmp = new HashMap<>();
         aiTasks.forEach(t -> {
             try {
@@ -86,7 +87,7 @@ class HexxagonPublicTest {
             }
         });
         MovePublic bestMove = Collections.max(tmp.entrySet(), Map.Entry.comparingByValue()).getKey();
-        assertArrayEquals(bestMove.to, new int[]{2, 2});
+        assertArrayEquals(bestMove.to(), new int[]{2, 2});
     }
 
     @RepeatedTest(10)
@@ -106,7 +107,7 @@ class HexxagonPublicTest {
         });
         MovePublic bestMove = Collections.max(tmp.entrySet(), Map.Entry.comparingByValue()).getKey();
 
-        assertArrayEquals(bestMove.to, new int[]{2, 2});
+        assertArrayEquals(bestMove.to(), new int[]{2, 2});
     }
 
     static HexxagonPublic getGameWithSettings(HexxagonPublicTest.settings setting) {

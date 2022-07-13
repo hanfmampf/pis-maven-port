@@ -61,8 +61,8 @@ public class HexxagonGUI extends PApplet {
                     int offsetX = (i * 70) + 100;
                     int offsetY = (j * 80) - cols.get(i).length * 40 + 400;
                     for (Move m: currentMoves){
-                        if (Arrays.equals(t.position, m.to) && t.type == Hexxagon.fieldType.EMPTY) {
-                            if (m.isCopy) fill(0,255,0); else fill(255,255,0);
+                        if (Arrays.equals(t.position, m.to()) && t.type == Hexxagon.fieldType.EMPTY) {
+                            if (m.isCopy()) fill(0,255,0); else fill(255,255,0);
                         }
                     }
                     hexTile(offsetX, offsetY, 40);
@@ -101,6 +101,10 @@ public class HexxagonGUI extends PApplet {
         ///option for difficulty
         //choose color ? maybe?
         //play button
+        textSize(40);
+        fill(0);
+        text("HEXXAGON", width/2, height - 750);
+        textSize(32);
         fill(0);
         text("CHOOSE YOUR DIFFICULTY!", width/2, height - 700);
         fill(87,8,97);
@@ -178,7 +182,7 @@ public class HexxagonGUI extends PApplet {
                 } else {
                     for (Move currentMove : currentMoves) {
                         int[] yolo = hexCoordinates.keySet().stream()
-                                .filter(key -> Arrays.equals(key, currentMove.to))
+                                .filter(key -> Arrays.equals(key, currentMove.to()))
                                 .findFirst().get();
                         if (hexCoordinates.containsKey(yolo)){
                             if (mouseOver(hexCoordinates.get(yolo), 40)){

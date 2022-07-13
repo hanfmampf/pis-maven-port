@@ -1,7 +1,7 @@
 package projekt_hexxagon;
 
 import java.util.*;
-
+//TODO Immutable
 public class Tile {
     Hexxagon.fieldType type;
     int[] position;
@@ -23,15 +23,7 @@ public class Tile {
     }
 
     public Tile getCopy(){
-        Hexxagon.fieldType t = null;
-        switch(this.type){
-            case RED -> t = Hexxagon.fieldType.RED;
-            case GONE -> t = Hexxagon.fieldType.GONE;
-            case EMPTY -> t = Hexxagon.fieldType.EMPTY;
-            case BLUE -> t = Hexxagon.fieldType.BLUE;
-        }
-        assert t != null: "Tile Copy error occurred: fieldType t is null";
-        Tile x = new Tile(t, this.position.clone());
+        Tile x = new Tile(this.type, this.position.clone());
         this.neighbors.forEach(n -> x.neighbors.add(n.clone()));
         return x;
     }

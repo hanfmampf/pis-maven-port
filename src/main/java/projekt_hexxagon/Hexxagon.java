@@ -78,7 +78,7 @@ public class Hexxagon implements HexxagonGame{
             newColumns.add(tmp);
         }
         logger.debug("Copy of board is being returned by getBoard()");
-        return newColumns;
+        return Collections.unmodifiableList(newColumns);
     }
 
     public boolean isGameOver(){
@@ -135,7 +135,7 @@ public class Hexxagon implements HexxagonGame{
                 .toList());
 
         assert moves.stream()
-                .allMatch(m -> this.columns.get(m.to[0])[m.to[1]].type == fieldType.EMPTY)
+                .allMatch(m -> this.columns.get(m.to()[0])[m.to()[1]].type == fieldType.EMPTY)
                 : "Illegal Moves, that try to move to a non-empty field!";
         logger.debug("getPossible Moves is returning and has not produced illegal moves");
         return moves;
@@ -147,8 +147,8 @@ public class Hexxagon implements HexxagonGame{
         boardTiles.get(type).forEach(t -> allMoves.addAll(getPossibleMoves(t)));
         logger.debug("getAllPossibleMoves has found {} moves", allMoves.size());
         for (Move m: allMoves){       //stream                  //useless jumps
-            if (!m.isCopy){     //filter
-                List<int[]> neighborsOfMovesTo = this.columns.get(m.to[0])[m.to[1]].neighbors;          //toList / stream
+            if (!m.isCopy()){     //filter
+                List<int[]> neighborsOfMovesTo = this.columns.get(m.to()[0])[m.to()[1]].neighbors;          //toList / stream
                 if (neighborsOfMovesTo.stream()
                         .allMatch(mm -> this.columns.get(mm[0])[mm[1]].type == fieldType.EMPTY)){        //filter
                             waste.add(m);       //dunno
@@ -157,9 +157,9 @@ public class Hexxagon implements HexxagonGame{
         }
         allMoves.removeAll(waste);
         waste.clear();
-        for (Move m: allMoves.stream().filter(move -> !move.isCopy).toList()){    //all jumps
-            List<Move> copies = allMoves.stream().filter(move -> move.isCopy).toList();    //all copies
-            if (copies.stream().anyMatch(cpMove -> cpMove.to == m.to)){
+        for (Move m: allMoves.stream().filter(move -> !move.isCopy()).toList()){    //all jumps
+            List<Move> copies = allMoves.stream().filter(Move::isCopy).toList();    //all copies
+            if (copies.stream().anyMatch(cpMove -> cpMove.to() == m.to())){
                 waste.add(m);
             }       //double copies
         }
@@ -179,55 +179,55 @@ public class Hexxagon implements HexxagonGame{
 
     public Hexxagon makeMove(Move move){
         assert !this.isGameOver(): "The game has already finished";
-        assert move.color == fieldType.BLUE || move.color == fieldType.RED
+        assert move.color() == fieldType.BLUE || move.color() == fieldType.RED
                 : "Move does not have a color!";
-        assert move.from[0] >= 0 && move.from[1]  >= 0: "Illegal indices in move.from";
-        assert move.to[0] >= 0 && move.to[1]  >= 0: "Illegal indices in move.to";
-        if (move.isCopy){
-            assert move.from[0] - move.to[0] < 2 && move.from[1] - move.to[1] < 2
+        assert move.from()[0] >= 0 && move.from()[1]  >= 0: "Illegal indices in move.from";
+        assert move.to()[0] >= 0 && move.to()[1]  >= 0: "Illegal indices in move.to";
+        if (move.isCopy()){
+            assert move.from()[0] - move.to()[0] < 2 && move.from()[1] - move.to()[1] < 2
                     : "Move went too far";
-            assert move.from[0] - move.to[0] > -2 && move.from[1] - move.to[1] > -2
+            assert move.from()[0] - move.to()[0] > -2 && move.from()[1] - move.to()[1] > -2
                     : "Move went too far";
         } else {
-            assert move.from[0] - move.to[0] < 3 && move.from[1] - move.to[1] < 3
+            assert move.from()[0] - move.to()[0] < 3 && move.from()[1] - move.to()[1] < 3
                     : "Move went too far";
-            assert move.from[0] - move.to[0] > -3 && move.from[1] - move.to[1] > -3
+            assert move.from()[0] - move.to()[0] > -3 && move.from()[1] - move.to()[1] > -3
                     : "Move went too far";
         }
 
         Hexxagon newGame = Hexxagon.of(this.boardTiles, this.columns
                 , this.difficulty, this.playerColor);
-        Tile moveToTile = newGame.columns.get(move.to[0])[move.to[1]];
-        Tile moveFromTile = newGame.columns.get(move.from[0])[move.from[1]];
+        Tile moveToTile = newGame.columns.get(move.to()[0])[move.to()[1]];
+        Tile moveFromTile = newGame.columns.get(move.from()[0])[move.from()[1]];
 
         assert moveToTile.type == fieldType.EMPTY : "The tile the move is moving to is not empty";
         logger.debug("makeMove has passed all initial assertions");
-        if (move.isCopy){
-            moveToTile.setType(move.color);
-            newGame.boardTiles.get(move.color).add(moveToTile);
+        if (move.isCopy()){
+            moveToTile.setType(move.color());
+            newGame.boardTiles.get(move.color()).add(moveToTile);
         } else {    //is jump
-            newGame.boardTiles.get(move.color).remove(moveFromTile);
+            newGame.boardTiles.get(move.color()).remove(moveFromTile);
             moveFromTile.setType(fieldType.EMPTY);
-            newGame.boardTiles.get(move.color).add(moveToTile);
-            moveToTile.setType(move.color);
+            newGame.boardTiles.get(move.color()).add(moveToTile);
+            moveToTile.setType(move.color());
         }
         logger.debug("Player pieces has successfully moved from {} to {}"
-                , move.from, move.to);
+                , move.from(), move.to());
         for (int[] neighbor: moveToTile.getNeighbors()){
             Tile neighborTile = newGame.columns.get(neighbor[0])[neighbor[1]];
             if (neighborTile.type == fieldType.RED || neighborTile.type == fieldType.BLUE){
-                if (move.color == fieldType.BLUE){
+                if (move.color() == fieldType.BLUE){
                     newGame.boardTiles.get(fieldType.BLUE).add(neighborTile);
                     newGame.boardTiles.get(fieldType.RED).remove(neighborTile);
                 } else {
                     newGame.boardTiles.get(fieldType.RED).add(neighborTile);
                     newGame.boardTiles.get(fieldType.BLUE).remove(neighborTile);
                 }
-                neighborTile.setType(move.color);
+                neighborTile.setType(move.color());
             }
         }
         logger.debug("makeMove has filled all neighboring pieces with color {}"
-                , move.color);
+                , move.color());
         if (!newGame.movesLeft(fieldType.RED)){ //fill all blue
             logger.debug("after makeMove, RED has no moves left," +
                     " so all remaining EMPTY tiles will be filled BLUE");
