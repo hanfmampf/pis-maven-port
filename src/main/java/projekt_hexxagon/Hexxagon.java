@@ -8,6 +8,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 interface HexxagonGame {
+    /**
+     * Returns a boolean, true if the game is over, else false
+     * */
     default boolean isGameOver(){
         Set<Tile> red = new HashSet<>();
         Set<Tile> blue = new HashSet<>();
@@ -27,9 +30,22 @@ interface HexxagonGame {
         blue.forEach(t -> m2.addAll(getPossibleMoves(t)));
         return m2.size() == 0;
     }
+    /**
+     * Get all moves for one specific tile
+     * */
     List<Move> getPossibleMoves(Tile chosenTile);
+    /**
+     * Execute a given move and return a new Hexxagon instance
+     * */
     Hexxagon makeMove(Move move);
+    /**
+     * Calculate the best move possible, considering the set difficulty
+     * */
     Move aiMove() throws InterruptedException, ExecutionException;
+    /**
+     * Returns a List of Tile Arrays.
+     * this is a deep copy to prevent reference leaks
+     * */
     List<Tile[]> getBoard();
 }
 
@@ -88,6 +104,10 @@ public class Hexxagon implements HexxagonGame{
         return new Hexxagon(boardTiles, columns, difficulty, playerColor);
     }
 
+    /**
+     * Returns a List of Tile Arrays.
+     * this is a deep copy to prevent reference leaks
+     * */
     public List<Tile[]> getBoard(){
         List<Tile[]> newColumns = new ArrayList<>();
         for (Tile[] tArray: columns){
@@ -98,12 +118,20 @@ public class Hexxagon implements HexxagonGame{
         return Collections.unmodifiableList(newColumns);
     }
 
+    /**
+     * Returns true when the game has ended.
+     * This is the case when either player does not have a move left
+     * */
     public boolean isGameOver(){
         boolean result = !movesLeft(fieldType.RED) || !movesLeft(fieldType.BLUE);
         logger.debug("isGameOver() is called will return {}", result);
         return result;
     }
 
+    /**
+     * Returns true of the player with the
+     * corresponding color has a move left
+     * */
     private boolean movesLeft(fieldType type){
         List<Move> m = new ArrayList<>();
         boardTiles.get(type).forEach(t -> m.addAll(getPossibleMoves(t)));
@@ -112,6 +140,9 @@ public class Hexxagon implements HexxagonGame{
         return m.size() != 0;
     }
 
+    /**
+     * Returns a List of Moves for the specified Tile.
+     * */
     public List<Move> getPossibleMoves(Tile chosenTile){
         if (chosenTile.type != fieldType.RED && chosenTile.type != fieldType.BLUE)
             return new ArrayList<>();
@@ -157,6 +188,10 @@ public class Hexxagon implements HexxagonGame{
         return moves;
     }
 
+    /**
+     * Returns a List of Moves for all player(type) Tiles.
+     * Warning: this prunes blatantly bad moves
+     * */
     private List<Move> getAllPossibleMoves(fieldType type){
         List<Move> allMoves = new ArrayList<>();
         List<Move> waste = new ArrayList<>();
@@ -185,6 +220,9 @@ public class Hexxagon implements HexxagonGame{
         return allMoves;
     }
 
+    /**
+     * Returns a random move from all possible moves
+     * */
     private Move getRandomMove(fieldType color){
         Random rn = new Random();
         List<Move> allMoves = this.getAllPossibleMoves(color);
@@ -193,6 +231,9 @@ public class Hexxagon implements HexxagonGame{
         return allMoves.get(rn.nextInt(0, allMoves.size()));
     }
 
+    /**
+     * Executes the given move and returns a new immutable instance of Hexxagon
+     * */
     public Hexxagon makeMove(Move move){
         assert !this.isGameOver(): "The game has already finished";
         assert move.color() == fieldType.BLUE || move.color() == fieldType.RED
@@ -271,6 +312,9 @@ public class Hexxagon implements HexxagonGame{
         MCS
     }
 
+    /**
+     * Multithreaded aiMove Method. Returns the best calculatable move
+     * */
     public Move aiMove() throws InterruptedException, ExecutionException {
         // https://stackoverflow.com/questions/9664036/how-to-run-two-methods-simultaneously
         // https://stackoverflow.com/questions/25231149/can-i-use-callable-threads-without-executorservice
@@ -318,6 +362,9 @@ public class Hexxagon implements HexxagonGame{
         return bestMove;
     }
 
+    /**
+     * Returns the evaluation for the given game using the minimax algorithm
+     * */
     private float minimax(Hexxagon game, float alpha, float beta, int depth, boolean isMax){
         logger.trace("Minimax Task: A: {}, B: {}, Tiefe: {}, isMax: {}"
                 , alpha, beta, depth, isMax);
@@ -361,6 +408,9 @@ public class Hexxagon implements HexxagonGame{
         }
     }
 
+    /**
+     * Returns the evaluation for the given game using monte carlo simulation
+     * */
     private float monteCarlo(Hexxagon game, int amount){
         int winCounter = 0;
         for (int i = 0; i < amount; i++){
