@@ -8,7 +8,25 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 interface HexxagonPublicInterface {
-    boolean isGameOver();
+    default boolean isGameOver(){
+        Set<TilePublic> red = new HashSet<>();
+        Set<TilePublic> blue = new HashSet<>();
+        getBoard().stream()
+                .flatMap(Arrays::stream)
+                .toList()
+                .forEach(t -> {
+                    switch(t.type){
+                        case RED -> red.add(t);
+                        case BLUE -> blue.add(t);
+                    }
+                });
+        List<MovePublic> m = new ArrayList<>();
+        red.forEach(t -> m.addAll(getPossibleMoves(t)));
+        if (m.size() == 0) return true;
+        List<MovePublic> m2 = new ArrayList<>();
+        blue.forEach(t -> m2.addAll(getPossibleMoves(t)));
+        return m2.size() == 0;
+    }
     List<MovePublic> getPossibleMoves(TilePublic chosenTile);
     HexxagonPublic makeMove(MovePublic move);
     MovePublic aiMove() throws InterruptedException, ExecutionException;
@@ -77,7 +95,6 @@ public class HexxagonPublic implements HexxagonPublicInterface {
             IntStream.range(0, tArray.length).forEach(i -> tmp[i] = tArray[i].getCopy());
             newColumns.add(tmp);
         }
-        logger.debug("Copy of board is being returned by getBoard()");
         return newColumns;
     }
 
@@ -137,7 +154,6 @@ public class HexxagonPublic implements HexxagonPublicInterface {
         assert moves.stream()
                 .allMatch(m -> this.columns.get(m.to()[0])[m.to()[1]].type == fieldType2.EMPTY)
                 : "Illegal Moves, that try to move to a non-empty field!";
-        logger.debug("getPossible Moves is returning and has not produced illegal moves");
         return moves;
     }
 
@@ -262,8 +278,8 @@ public class HexxagonPublic implements HexxagonPublicInterface {
         // https://www.journaldev.com/1650/java-futuretask-example-program
         // https://www.baeldung.com/java-executor-service-tutorial
         assert !this.isGameOver(): "Game is over";
-        List<MovePublic> allMoves = getAllPossibleMoves(this.aiColor);
         long startTime = System.nanoTime();
+        List<MovePublic> allMoves = getAllPossibleMoves(this.aiColor);
         logger.debug("aiMove has started calculating");
 
         ExecutorService executorService = Executors.newFixedThreadPool(8);
@@ -303,18 +319,25 @@ public class HexxagonPublic implements HexxagonPublicInterface {
     }
 
     public float minimax(HexxagonPublic game, float alpha, float beta, int depth, boolean isMax){
+        logger.trace("Minimax Task: A: {}, B: {}, Tiefe: {}, isMax: {}"
+                , alpha, beta, depth, isMax);
         if (depth == 0 || game.isGameOver()) {
-            return game.boardTiles.get(game.aiColor).size()
+            float result = game.boardTiles.get(game.aiColor).size()
                     - game.boardTiles.get(game.playerColor).size();
+            logger.trace("Minimax task is returning {}", result);
+            return result;
         }
 
         if (isMax) {
             List<MovePublic> blueMoves = game.getAllPossibleMoves(game.aiColor);
+            logger.trace("Minimax task for isMax = true has {} moves to evaluate"
+                    , blueMoves.size());
             float value = -999;
             for (MovePublic m: blueMoves){
                 value = Math.max(value, minimax(game.makeMove(m)
                         , alpha, beta, depth - 1, false));
                 if (value >= beta){
+                    logger.trace("Alpha Beta Cutoff (AI)");
                     break;
                 }
                 alpha = Math.max(alpha, value);
@@ -322,11 +345,14 @@ public class HexxagonPublic implements HexxagonPublicInterface {
             return value;
         } else {
             List<MovePublic> redMoves = game.getAllPossibleMoves(game.playerColor);
+            logger.trace("Minimax task for isMax = false has {} moves to evaluate"
+                    , redMoves.size());
             float value = 999;
             for (MovePublic m: redMoves){
                 value = Math.min(value, minimax(game.makeMove(m)
                         , alpha, beta, depth - 1, true));
                 if (value <= alpha){
+                    logger.trace("Alpha Beta Cutoff (Player)");
                     break;
                 }
                 beta = Math.min(beta, value);
@@ -338,11 +364,14 @@ public class HexxagonPublic implements HexxagonPublicInterface {
     public float monteCarlo(HexxagonPublic game, int amount){
         int winCounter = 0;
         for (int i = 0; i < amount; i++){
+            logger.trace("Monte Carlo Task is playing game no. {}", i);
             HexxagonPublic newGame = HexxagonPublic.of(game.boardTiles, game.columns
                     , game.difficulty, game.playerColor);
             boolean isAI = false;
             for (int j = 0; j < amount/10; j++){
                 if (newGame.isGameOver()) break;
+                logger.trace("Monte Carlo Task is playing game no. {} " +
+                        "and the random walk is at depth {}", i, j);
                 MovePublic move;
                 move = newGame.getRandomMove(isAI ? game.aiColor : game.playerColor);
                 newGame = newGame.makeMove(move);
@@ -350,6 +379,8 @@ public class HexxagonPublic implements HexxagonPublicInterface {
             }
             if (newGame.boardTiles.get(newGame.aiColor).size()
                     > newGame.boardTiles.get(newGame.playerColor).size()){
+                logger.trace("Monte Carlo task, game no. {} scored a 'win'" +
+                        " and current has {} wins", i, winCounter);
                 winCounter += 1;
             }
         }

@@ -360,7 +360,7 @@ public class Hexxagon implements HexxagonGame{
             return value;
         }
     }
-    //TODO LOG:TRACE
+
     private float monteCarlo(Hexxagon game, int amount){
         int winCounter = 0;
         for (int i = 0; i < amount; i++){
