@@ -41,6 +41,9 @@ class HexxagonPublicTest {
         obvBestMoveGame = getGameWithSettings(HexxagonPublicTest.settings.OBVWIN);
     }
 
+    /** Test if the movesLeft Method returns correct Values
+     *  for all players in the given games
+     * **/
     @Test
     void movesLeft() {
         Assertions.assertAll(
@@ -57,6 +60,9 @@ class HexxagonPublicTest {
                 );
     }
 
+    /** Test if getAllPossibleMoves returns
+     * the expected number of moves in a given game
+     * **/
     @Test
     void getAllPossibleMoves() {
         //assertequal size
@@ -65,6 +71,10 @@ class HexxagonPublicTest {
         assertEquals(21, allMoves.size());
     }
 
+
+    /** Test if getRandomMove produces
+     *  a legit move in a given game
+     * **/
     @Test
     void getRandomMove() {
         //test if move is valid
@@ -78,6 +88,8 @@ class HexxagonPublicTest {
 
     }
 
+    /** Test if minimax chooses the best move in a set scenario
+     * **/
     @RepeatedTest(10)
     void minimax() {
         int difficulty = 2;
@@ -97,6 +109,8 @@ class HexxagonPublicTest {
         assertArrayEquals(bestMove.to(), new int[]{2, 2});
     }
 
+    /** Test if monteCarlo chooses the best move in a set scenario
+     * **/
     @RepeatedTest(10)
     void monteCarlo() {
         int difficulty = 2;

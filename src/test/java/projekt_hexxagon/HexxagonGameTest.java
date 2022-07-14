@@ -38,8 +38,11 @@ class HexxagonGameTest {
     static void tearDown() {
     }
 
+    /** Test if isGameOver returns
+     * the correct boolean value for the given games
+     * **/
     @Test
-    void isGameOver() { //assert all
+    void isGameOver() {
         Assertions.assertFalse(defaultGame.isGameOver());
         Assertions.assertFalse(centerGame.isGameOver());
         Assertions.assertTrue(emptyGame.isGameOver());
@@ -48,6 +51,9 @@ class HexxagonGameTest {
         Assertions.assertTrue(aiLostGame.isGameOver());
     }
 
+    /** Test if getPossibleMoves returns
+     *  the correct Lists in the given games
+     * **/
     @Test
     void getPossibleMoves() {
         Tile emptyTile = emptyGame.getBoard().get(0)[0];
@@ -63,6 +69,9 @@ class HexxagonGameTest {
         Assertions.assertEquals(15, centerGame.getPossibleMoves(centerTile2).size());
     }
 
+    /** Test if makeMove throws the correct
+     * assertion errors when a bad move is passed in
+     * **/
     @Test
     void makeMove() {
         Move tooFar = Move.of(Hexxagon.fieldType.RED, false, new int[]{0,0}, new int[]{7,5});
@@ -83,8 +92,11 @@ class HexxagonGameTest {
         Assertions.assertEquals("Illegal indices in move.from", e.getMessage());
     }
 
+    /** Test if aiMove returns a legit moves
+     *  and throws the correct assertion errors
+     * **/
     @Test
-    void aiMove() {
+    void aiMove() throws ExecutionException, InterruptedException {
         AssertionError e = Assertions.assertThrows(AssertionError.class, ()-> {
             fullGame.aiMove();
         });
@@ -99,8 +111,17 @@ class HexxagonGameTest {
             emptyGame.aiMove();
         });
         Assertions.assertEquals("Game is over", e.getMessage());
+
+        Move move = centerGame.aiMove();
+        List<Tile[]> board = centerGame.getBoard();
+        Tile moveFromTile = board.get(move.from()[0])[move.from()[1]];
+        Tile moveToTile = board.get(move.to()[0])[move.to()[1]];
+        assertSame(moveToTile.type, Hexxagon.fieldType.EMPTY);
+        assertSame(moveFromTile.type, move.color());
     }
 
+    /** Test if getBoard() causes reference leaks
+     * **/
     @Test
     void getBoard() throws ExecutionException, InterruptedException {
         List<Tile[]> board = defaultGame.getBoard();

@@ -337,6 +337,7 @@ public class Hexxagon implements HexxagonGame{
                 value = Math.max(value, minimax(game.makeMove(m)
                         , alpha, beta, depth - 1, false));
                 if (value >= beta){
+                    logger.trace("Alpha Beta Cutoff (AI)");
                     break;
                 }
                 alpha = Math.max(alpha, value);
@@ -351,6 +352,7 @@ public class Hexxagon implements HexxagonGame{
                 value = Math.min(value, minimax(game.makeMove(m)
                         , alpha, beta, depth - 1, true));
                 if (value <= alpha){
+                    logger.trace("Alpha Beta Cutoff (Player)");
                     break;
                 }
                 beta = Math.min(beta, value);
