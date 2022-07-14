@@ -68,6 +68,13 @@ class HexxagonPublicTest {
     @Test
     void getRandomMove() {
         //test if move is valid
+        MovePublic move = centerGame.getRandomMove(HexxagonPublic.fieldType2.RED);
+        List<TilePublic[]> board = centerGame.getBoard();
+
+        TilePublic moveFromTile = board.get(move.from()[0])[move.from()[1]];
+        TilePublic moveToTile = board.get(move.to()[0])[move.to()[1]];
+        assertSame(moveToTile.type, HexxagonPublic.fieldType2.EMPTY);
+        assertSame(moveFromTile.type, move.color());
 
     }
 

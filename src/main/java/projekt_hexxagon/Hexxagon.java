@@ -2,7 +2,6 @@ package projekt_hexxagon;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.LogManager;
@@ -10,7 +9,23 @@ import org.apache.logging.log4j.Logger;
 
 interface HexxagonGame {
     default boolean isGameOver(){
-
+        Set<Tile> red = new HashSet<>();
+        Set<Tile> blue = new HashSet<>();
+        getBoard().stream()
+                .flatMap(Arrays::stream)
+                .toList()
+                .forEach(t -> {
+                    switch(t.type){
+                        case RED -> red.add(t);
+                        case BLUE -> blue.add(t);
+                    }
+                });
+        List<Move> m = new ArrayList<>();
+        red.forEach(t -> m.addAll(getPossibleMoves(t)));
+        if (m.size() == 0) return true;
+        List<Move> m2 = new ArrayList<>();
+        blue.forEach(t -> m2.addAll(getPossibleMoves(t)));
+        return m2.size() == 0;
     }
     List<Move> getPossibleMoves(Tile chosenTile);
     Hexxagon makeMove(Move move);
@@ -80,20 +95,19 @@ public class Hexxagon implements HexxagonGame{
             IntStream.range(0, tArray.length).forEach(i -> tmp[i] = tArray[i].getCopy());
             newColumns.add(tmp);
         }
-        logger.debug("Copy of board is being returned by getBoard()");
         return Collections.unmodifiableList(newColumns);
     }
 
-//    public boolean isGameOver(){
-//        boolean result = !movesLeft(fieldType.RED) || !movesLeft(fieldType.BLUE);
-//        logger.debug("isGameOver() is called will return {}", result);
-//        return result;
-//    }
+    public boolean isGameOver(){
+        boolean result = !movesLeft(fieldType.RED) || !movesLeft(fieldType.BLUE);
+        logger.debug("isGameOver() is called will return {}", result);
+        return result;
+    }
 
     private boolean movesLeft(fieldType type){
         List<Move> m = new ArrayList<>();
         boardTiles.get(type).forEach(t -> m.addAll(getPossibleMoves(t)));
-        logger.debug("movesLeft for {} is called and returns {}"
+        logger.trace("movesLeft for {} is called and returns {}"
                 , type, m.size() != 0);
         return m.size() != 0;
     }
@@ -140,7 +154,6 @@ public class Hexxagon implements HexxagonGame{
         assert moves.stream()
                 .allMatch(m -> this.columns.get(m.to()[0])[m.to()[1]].type == fieldType.EMPTY)
                 : "Illegal Moves, that try to move to a non-empty field!";
-        logger.debug("getPossible Moves is returning and has not produced illegal moves");
         return moves;
     }
 
@@ -176,7 +189,7 @@ public class Hexxagon implements HexxagonGame{
         Random rn = new Random();
         List<Move> allMoves = this.getAllPossibleMoves(color);
         assert allMoves.size() != 0: "";
-        logger.debug("getRandomMove will successfully return a random move");
+        logger.debug("getRandomMove returns a random move");
         return allMoves.get(rn.nextInt(0, allMoves.size()));
     }
 
@@ -272,18 +285,18 @@ public class Hexxagon implements HexxagonGame{
         ExecutorService executorService = Executors.newFixedThreadPool(8);
         List<Callable<Map<Move, Float>>> aiTasks = new ArrayList<>();
         List<Future<Map<Move, Float>>> results;
-        aiMode mode = this.difficulty < 2 ? aiMode.MCS : aiMode.MINMAX;
+        aiMode mode = this.difficulty <= 2 ? aiMode.MCS : aiMode.MINMAX;
         //diff 1 -> 50 mcs
         //diff 2 -> 100 mcs
         //diff 3 -> mmx d 2
         //diff 4 -> mmx d 3
         //diff 5 -> mmx d 4
         allMoves.forEach(move -> aiTasks.add(new aiTask(this, move
-                , this.difficulty*50, mode, this.difficulty - 1)));
+                , this.difficulty*50, mode, this.difficulty-1)));
         logger.info("aiTasks for every move: MCS amount {}, Mode {}, MMX depth {}"
-                , this.difficulty*50, mode, this.difficulty - 1);
+                , this.difficulty*50, mode, this.difficulty-1);
         logger.info("aiMove created the needed tasks for the executor service");
-        logger.info("aiMove difficulty setting is currently at {}", this.difficulty);
+        logger.info("aiMove difficulty setting is currently at {}", this.difficulty-1);
         assert !aiTasks.isEmpty(): "aiTasks empty!";
         results = executorService.invokeAll(aiTasks);
         executorService.shutdown();
@@ -306,13 +319,19 @@ public class Hexxagon implements HexxagonGame{
     }
 
     private float minimax(Hexxagon game, float alpha, float beta, int depth, boolean isMax){
+        logger.trace("Minimax Task: A: {}, B: {}, Tiefe: {}, isMax: {}"
+                , alpha, beta, depth, isMax);
         if (depth == 0 || game.isGameOver()) {
-            return game.boardTiles.get(game.aiColor).size()
+            float result = game.boardTiles.get(game.aiColor).size()
                     - game.boardTiles.get(game.playerColor).size();
+            logger.trace("Minimax task is returning {}", result);
+            return result;
         }
 
         if (isMax) {
             List<Move> blueMoves = game.getAllPossibleMoves(game.aiColor);
+            logger.trace("Minimax task for isMax = true has {} moves to evaluate"
+                    , blueMoves.size());
             float value = -999;
             for (Move m: blueMoves){
                 value = Math.max(value, minimax(game.makeMove(m)
@@ -325,6 +344,8 @@ public class Hexxagon implements HexxagonGame{
             return value;
         } else {
             List<Move> redMoves = game.getAllPossibleMoves(game.playerColor);
+            logger.trace("Minimax task for isMax = false has {} moves to evaluate"
+                    , redMoves.size());
             float value = 999;
             for (Move m: redMoves){
                 value = Math.min(value, minimax(game.makeMove(m)
@@ -337,15 +358,18 @@ public class Hexxagon implements HexxagonGame{
             return value;
         }
     }
-
+    //TODO LOG:TRACE
     private float monteCarlo(Hexxagon game, int amount){
         int winCounter = 0;
         for (int i = 0; i < amount; i++){
+            logger.trace("Monte Carlo Task is playing game no. {}", i);
             Hexxagon newGame = Hexxagon.of(game.boardTiles, game.columns
                     , game.difficulty, game.playerColor);
             boolean isAI = false;
             for (int j = 0; j < amount/10; j++){
                 if (newGame.isGameOver()) break;
+                logger.trace("Monte Carlo Task is playing game no. {} " +
+                        "and the random walk is at depth {}", i, j);
                 Move move;
                 move = newGame.getRandomMove(isAI ? game.aiColor : game.playerColor);
                 newGame = newGame.makeMove(move);
@@ -353,6 +377,8 @@ public class Hexxagon implements HexxagonGame{
             }
             if (newGame.boardTiles.get(newGame.aiColor).size()
                     > newGame.boardTiles.get(newGame.playerColor).size()){
+                logger.trace("Monte Carlo task, game no. {} scored a 'win'" +
+                        " and current has {} wins", i, winCounter);
                 winCounter += 1;
             }
         }

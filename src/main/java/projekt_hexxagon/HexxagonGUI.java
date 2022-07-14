@@ -98,9 +98,6 @@ public class HexxagonGUI extends PApplet {
 }
 
     void renderMainMenu(){
-        ///option for difficulty
-        //choose color ? maybe?
-        //play button
         textSize(40);
         fill(0);
         text("HEXXAGON", width/2, height - 750);
