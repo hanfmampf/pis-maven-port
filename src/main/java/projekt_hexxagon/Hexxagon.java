@@ -2,13 +2,16 @@ package projekt_hexxagon;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 interface HexxagonGame {
-    boolean isGameOver();
+    default boolean isGameOver(){
+
+    }
     List<Move> getPossibleMoves(Tile chosenTile);
     Hexxagon makeMove(Move move);
     Move aiMove() throws InterruptedException, ExecutionException;
@@ -81,11 +84,11 @@ public class Hexxagon implements HexxagonGame{
         return Collections.unmodifiableList(newColumns);
     }
 
-    public boolean isGameOver(){
-        boolean result = !movesLeft(fieldType.RED) || !movesLeft(fieldType.BLUE);
-        logger.debug("isGameOver() is called will return {}", result);
-        return result;
-    }
+//    public boolean isGameOver(){
+//        boolean result = !movesLeft(fieldType.RED) || !movesLeft(fieldType.BLUE);
+//        logger.debug("isGameOver() is called will return {}", result);
+//        return result;
+//    }
 
     private boolean movesLeft(fieldType type){
         List<Move> m = new ArrayList<>();
